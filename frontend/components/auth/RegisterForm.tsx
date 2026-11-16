@@ -2,15 +2,15 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSafeRouter } from "@/hooks/useSafeRouter";
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/context/AuthContext";
 
 export const RegisterForm: React.FC = () => {
-  const router = useRouter();
-  const { register } = useAuth();
+  const router = useSafeRouter();
+  const { register, error: authError, clearError } = useAuth();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -22,52 +22,89 @@ export const RegisterForm: React.FC = () => {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [agreePrivacy, setAgreePrivacy] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   // Password strength calculation
   const getPasswordStrength = (pass: string) => {
     if (!pass) return { label: "", color: "", width: "0%" };
-    if (pass.length < 6) return { label: "Weak", color: "bg-red-500 text-red-500", width: "33%" };
-    if (pass.length < 10) return { label: "Fair", color: "bg-amber-500 text-amber-500", width: "66%" };
-    return { label: "Strong", color: "bg-emerald-500 text-emerald-500", width: "100%" };
+    if (pass.length < 8) return { label: "Weak (Min 8 chars required)", color: "bg-red-500 text-red-500", width: "33%" };
+    const hasUpper = /[A-Z]/.test(pass);
+    const hasLower = /[a-z]/.test(pass);
+    const hasNum = /[0-9]/.test(pass);
+    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pass);
+
+    if (hasUpper && hasLower && hasNum && hasSpecial) {
+      return { label: "Strong", color: "bg-emerald-500 text-emerald-500", width: "100%" };
+    }
+    return { label: "Fair (Add uppercase, number & symbol)", color: "bg-amber-500 text-amber-500", width: "66%" };
   };
 
   const strength = getPasswordStrength(password);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    if (isLoading) return;
 
-    if (!firstName || !lastName) {
-      setError("Please provide your first and last name.");
+    setLocalError(null);
+    clearError();
+
+    const trimmedFirstName = firstName.trim();
+    const trimmedLastName = lastName.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedFirstName || !trimmedLastName) {
+      setLocalError("Please provide your first and last name.");
       return;
     }
-    if (!email) {
-      setError("Please provide a valid email address.");
+    if (!trimmedEmail) {
+      setLocalError("Please provide a valid email address.");
       return;
     }
     if (password !== confirmPassword) {
-      setError("Passwords do not match.");
+      setLocalError("Passwords do not match.");
+      return;
+    }
+    if (password.length < 8) {
+      setLocalError("Password must be at least 8 characters long.");
+      return;
+    }
+    const passwordComplexityRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+    if (!passwordComplexityRegex.test(password)) {
+      setLocalError("Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
       return;
     }
     if (!agreeTerms || !agreePrivacy) {
-      setError("Please accept the Terms of Service and Privacy Policy to continue.");
+      setLocalError("Please accept the Terms of Service and Privacy Policy to continue.");
       return;
     }
 
     setIsLoading(true);
-    setTimeout(async () => {
-      await register({ firstName, lastName, email, phone });
+    try {
+      const success = await register({
+        firstName: trimmedFirstName,
+        lastName: trimmedLastName,
+        email: trimmedEmail,
+        phone: trimmedPhone,
+        password,
+      });
+      if (success) {
+        router.push("/onboarding");
+      }
+    } catch (err: any) {
+      setLocalError(err.message || "Registration failed. Please try again.");
+    } finally {
       setIsLoading(false);
-      router.push("/onboarding");
-    }, 600);
+    }
   };
+
+  const displayError = localError || authError;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
+      {displayError && (
         <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-semibold">
-          {error}
+          {displayError}
         </div>
       )}
 
@@ -183,6 +220,7 @@ export const RegisterForm: React.FC = () => {
         size="md"
         className="w-full bg-[#2563EB] hover:bg-blue-700 font-bold"
         isLoading={isLoading}
+        disabled={isLoading}
         rightIcon={<ArrowRight className="h-4 w-4" />}
       >
         Create Account

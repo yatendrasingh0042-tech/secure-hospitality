@@ -1,39 +1,79 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Calendar, MapPin, ArrowRight, Camera } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { useSafeRouter } from "@/hooks/useSafeRouter";
+import { MapPin, ArrowRight, Home } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { OnboardingProgress } from "@/components/onboarding/OnboardingProgress";
+import { AvatarPicker, DobPicker } from "@/components/profile";
+import { ToastContainer, ToastType } from "@/components/ui/Toast";
 import { useAuth } from "@/context/AuthContext";
 
 export default function OnboardingProfileStepPage() {
-  const router = useRouter();
-  const { user, updateUser } = useAuth();
+  const router = useSafeRouter();
+  const { user, updateUser, isLoading } = useAuth();
 
-  const [firstName, setFirstName] = useState(user?.firstName || "Yatendra");
-  const [lastName, setLastName] = useState(user?.lastName || "Singh");
-  const [phone, setPhone] = useState(user?.phone || "+91 98765 43210");
-  const [dob, setDob] = useState(user?.dateOfBirth || "1994-08-15");
+  const [firstName, setFirstName] = useState(user?.firstName || "");
+  const [lastName, setLastName] = useState(user?.lastName || "");
+  const [phone, setPhone] = useState(user?.phone || "");
+  const [dob, setDob] = useState(user?.dateOfBirth || "");
+  const [avatar, setAvatar] = useState(user?.avatar || "");
   const [gender, setGender] = useState<"Male" | "Female" | "Other" | "Prefer not to say">(user?.gender || "Male");
-  const [city, setCity] = useState(user?.city || "Central City");
-  const [state, setState] = useState(user?.state || "Haryana");
+  const [address, setAddress] = useState(user?.address || "");
+  const [city, setCity] = useState(user?.city || "");
+  const [state, setState] = useState(user?.state || "");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [toasts, setToasts] = useState<Array<{ id: string; type?: ToastType; title: string; message?: string }>>([]);
+
+  // Sync state when authenticated user data finishes hydrating from backend
+  useEffect(() => {
+    if (user) {
+      setFirstName(user.firstName || "");
+      setLastName(user.lastName || "");
+      setPhone(user.phone || "");
+      setDob(user.dateOfBirth || "");
+      setAvatar(user.avatar || "");
+      setGender(user.gender || "Male");
+      setAddress(user.address || "");
+      setCity(user.city || "");
+      setState(user.state || "");
+    }
+  }, [user]);
+
+  const addToast = (title: string, message?: string, type: ToastType = "error") => {
+    const id = `toast-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    setToasts((prev) => [...prev, { id, title, message, type }]);
+  };
+
+  const removeToast = (id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    updateUser({
-      firstName,
-      lastName,
-      phone,
-      dateOfBirth: dob,
-      gender,
-      city,
-      state,
-    });
-    router.push("/onboarding/emergency-contacts");
+    try {
+      setIsSaving(true);
+      await updateUser({
+        firstName,
+        lastName,
+        phone,
+        dateOfBirth: dob,
+        avatar,
+        gender,
+        address,
+        city,
+        state,
+      });
+      setIsSaving(false);
+      router.push("/onboarding/emergency-contacts");
+    } catch (err: any) {
+      setIsSaving(false);
+      addToast("Save Failed", err.message || "Failed to save profile. Please try again.");
+    }
   };
 
   return (
@@ -48,28 +88,14 @@ export default function OnboardingProfileStepPage() {
               <p className="text-xs text-[#64748B]">Provide your basic details to personalize your account.</p>
             </div>
 
-            {/* Avatar Selector Demo */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="relative">
-                <div className="h-16 w-16 rounded-2xl bg-[#2563EB] text-white font-bold text-xl flex items-center justify-center">
-                  {firstName[0] || "Y"}
-                  {lastName[0] || "S"}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => alert("Avatar upload demo — Select local image")}
-                  className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-slate-800 text-white flex items-center justify-center border-2 border-white"
-                  aria-label="Upload photo"
-                >
-                  <Camera className="h-3 w-3" />
-                </button>
-              </div>
-
-              <div>
-                <p className="font-bold text-sm text-[#0F172A]">Profile Avatar</p>
-                <p className="text-xs text-[#64748B]">Select a avatar or demonstrate local image selection.</p>
-              </div>
-            </div>
+            {/* Real Interactive Avatar Upload */}
+            <AvatarPicker
+              avatarUrl={avatar}
+              firstName={firstName || "User"}
+              lastName={lastName}
+              onChange={(newAvatarUrl) => setAvatar(newAvatarUrl)}
+              onError={(errorMsg) => addToast("Avatar Upload Error", errorMsg, "error")}
+            />
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -95,12 +121,11 @@ export default function OnboardingProfileStepPage() {
               />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Input
+                <DobPicker
                   label="Date of Birth"
-                  type="date"
                   value={dob}
-                  onChange={(e) => setDob(e.target.value)}
-                  leftIcon={<Calendar className="h-4 w-4" />}
+                  onChange={(newDobIso) => setDob(newDobIso)}
+                  onError={(errorMsg) => addToast("Date Selection Error", errorMsg, "error")}
                 />
 
                 <div className="space-y-1.5">
@@ -117,6 +142,14 @@ export default function OnboardingProfileStepPage() {
                   </select>
                 </div>
               </div>
+
+              <Input
+                label="Residential Address"
+                placeholder="e.g. Sector 14, Main Expressway Road"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                leftIcon={<Home className="h-4 w-4" />}
+              />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
@@ -137,6 +170,7 @@ export default function OnboardingProfileStepPage() {
                   type="submit"
                   variant="primary"
                   size="md"
+                  isLoading={isSaving || isLoading}
                   className="w-full bg-[#2563EB] hover:bg-blue-700 font-bold"
                   rightIcon={<ArrowRight className="h-4 w-4" />}
                 >
@@ -146,7 +180,11 @@ export default function OnboardingProfileStepPage() {
             </form>
           </Card>
         </div>
+
+        <ToastContainer toasts={toasts} onClose={removeToast} />
       </PageContainer>
     </div>
   );
 }
+
+

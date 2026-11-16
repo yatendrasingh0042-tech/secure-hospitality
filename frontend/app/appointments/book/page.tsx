@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useSafeRouter } from "@/hooks/useSafeRouter";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,10 +24,12 @@ import { TimeSlotSelector } from "@/components/appointments/TimeSlotSelector";
 import { PatientForm } from "@/components/appointments/PatientForm";
 import { AppointmentProvider, useAppointment } from "@/context/AppointmentContext";
 import { DOCTORS_DATA } from "@/data/doctors";
+import { formatCurrency } from "@/lib/formatCurrency";
+import { getAppointmentPrice } from "@/lib/pricing/appointmentPricing";
 import { HOSPITALS_DATA } from "@/data/hospitals";
 
 function BookingEngineContent() {
-  const router = useRouter();
+  const router = useSafeRouter();
   const searchParams = useSearchParams();
   const doctorIdParam = searchParams.get("doctorId");
   const hospitalIdParam = searchParams.get("hospitalId");
@@ -169,7 +172,7 @@ function BookingEngineContent() {
                             <div className="truncate">
                               <p className="font-bold text-sm text-[#0F172A] truncate">{doc.name}</p>
                               <p className="text-xs text-[#2563EB] font-semibold truncate">{doc.specialization}</p>
-                              <p className="text-[11px] text-[#64748B] truncate mt-0.5">${doc.consultationFee} fee · {doc.experienceYears} yrs exp</p>
+                              <p className="text-[11px] text-[#64748B] truncate mt-0.5">{formatCurrency(doc.consultationFee)} fee · {doc.experienceYears} yrs exp</p>
                             </div>
                           </div>
                         );
@@ -203,8 +206,13 @@ function BookingEngineContent() {
                             : "bg-white border-[#E2E8F0] hover:border-blue-200 hover:bg-slate-50"
                         }`}
                       >
-                        <div className="h-10 w-10 rounded-xl bg-blue-100 text-[#2563EB] flex items-center justify-center">
-                          <MapPin className="h-5 w-5" />
+                        <div className="flex items-center justify-between">
+                          <div className="h-10 w-10 rounded-xl bg-blue-100 text-[#2563EB] flex items-center justify-center">
+                            <MapPin className="h-5 w-5" />
+                          </div>
+                          <span className="text-xs font-extrabold text-[#2563EB]">
+                            {formatCurrency(getAppointmentPrice(selectedDoctor, "in_person"))}
+                          </span>
                         </div>
                         <div>
                           <h4 className="font-bold text-sm text-[#0F172A]">In-Person Visit</h4>
@@ -221,8 +229,13 @@ function BookingEngineContent() {
                             : "bg-white border-[#E2E8F0] hover:border-blue-200 hover:bg-slate-50"
                         }`}
                       >
-                        <div className="h-10 w-10 rounded-xl bg-emerald-100 text-[#10B981] flex items-center justify-center">
-                          <Video className="h-5 w-5" />
+                        <div className="flex items-center justify-between">
+                          <div className="h-10 w-10 rounded-xl bg-emerald-100 text-[#10B981] flex items-center justify-center">
+                            <Video className="h-5 w-5" />
+                          </div>
+                          <span className="text-xs font-extrabold text-emerald-600">
+                            {formatCurrency(getAppointmentPrice(selectedDoctor, "video"))}
+                          </span>
                         </div>
                         <div>
                           <h4 className="font-bold text-sm text-[#0F172A]">Video Consultation</h4>
@@ -239,8 +252,13 @@ function BookingEngineContent() {
                             : "bg-white border-[#E2E8F0] hover:border-blue-200 hover:bg-slate-50"
                         }`}
                       >
-                        <div className="h-10 w-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
-                          <RefreshCw className="h-5 w-5" />
+                        <div className="flex items-center justify-between">
+                          <div className="h-10 w-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                            <RefreshCw className="h-5 w-5" />
+                          </div>
+                          <span className="text-xs font-extrabold text-purple-600">
+                            {formatCurrency(getAppointmentPrice(selectedDoctor, "follow_up"))}
+                          </span>
                         </div>
                         <div>
                           <h4 className="font-bold text-sm text-[#0F172A]">Follow-Up Visit</h4>

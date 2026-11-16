@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSafeRouter } from "@/hooks/useSafeRouter";
 import {
   ArrowLeft,
   Truck,
@@ -21,10 +21,11 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { OrderSummary } from "@/components/cart/OrderSummary";
 import { useCart } from "@/context/CartContext";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export default function CheckoutPage() {
-  const router = useRouter();
-  const { items, clearCart } = useCart();
+  const router = useSafeRouter();
+  const { items, subtotal, deliveryMethod, setDeliveryMethod, clearCart } = useCart();
 
   const [deliveryInfo, setDeliveryInfo] = useState({
     fullName: "",
@@ -36,7 +37,6 @@ export default function CheckoutPage() {
     pinCode: "",
   });
 
-  const [deliveryOption, setDeliveryOption] = useState<"standard" | "express">("standard");
   const [paymentMethod, setPaymentMethod] = useState<"cod" | "upi" | "card">("cod");
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -160,31 +160,35 @@ export default function CheckoutPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div
-                  onClick={() => setDeliveryOption("standard")}
+                  onClick={() => setDeliveryMethod("standard")}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 ${
-                    deliveryOption === "standard"
+                    deliveryMethod === "standard"
                       ? "bg-blue-50/80 border-[#2563EB] ring-2 ring-[#2563EB]"
                       : "bg-white border-[#E2E8F0] hover:bg-slate-50"
                   }`}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-sm text-[#0F172A]">Standard Delivery</span>
-                    <Badge variant="success" size="sm">Free</Badge>
+                    {subtotal >= 500 ? (
+                      <Badge variant="success" size="sm">FREE</Badge>
+                    ) : (
+                      <span className="text-xs font-bold text-[#0F172A]">{formatCurrency(49)}</span>
+                    )}
                   </div>
                   <p className="text-xs text-[#64748B]">Estimated delivery in 2–3 business days.</p>
                 </div>
 
                 <div
-                  onClick={() => setDeliveryOption("express")}
+                  onClick={() => setDeliveryMethod("express")}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 ${
-                    deliveryOption === "express"
+                    deliveryMethod === "express"
                       ? "bg-blue-50/80 border-[#2563EB] ring-2 ring-[#2563EB]"
                       : "bg-white border-[#E2E8F0] hover:bg-slate-50"
                   }`}
                 >
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-sm text-[#0F172A]">Express Priority Delivery</span>
-                    <span className="text-xs font-bold text-[#2563EB]">$4.99</span>
+                    <span className="text-xs font-bold text-[#2563EB]">{formatCurrency(49)}</span>
                   </div>
                   <p className="text-xs text-[#64748B]">Same-day or Next-morning doorstep dispatch.</p>
                 </div>

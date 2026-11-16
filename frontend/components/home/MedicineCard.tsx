@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Medicine } from "@/data/medicines";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 interface MedicineCardProps {
   medicine: Medicine;
@@ -53,11 +54,11 @@ export const MedicineCard: React.FC<MedicineCardProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <span className="text-lg font-extrabold text-[#0F172A]">
-              ${medicine.price.toFixed(2)}
+              {formatCurrency(medicine.price)}
             </span>
             {medicine.originalPrice && (
               <span className="text-xs text-slate-400 line-through ml-1.5 font-medium">
-                ${medicine.originalPrice.toFixed(2)}
+                {formatCurrency(medicine.originalPrice)}
               </span>
             )}
           </div>

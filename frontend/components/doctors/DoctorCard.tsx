@@ -7,12 +7,17 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Doctor } from "@/types/doctor";
+import { formatCurrency } from "@/lib/formatCurrency";
+import { getAppointmentPrice } from "@/lib/pricing/appointmentPricing";
 
 interface DoctorCardProps {
   doctor: Doctor;
 }
 
 export const DoctorCard: React.FC<DoctorCardProps> = ({ doctor }) => {
+  const inPersonFee = getAppointmentPrice(doctor, "in_person");
+  const videoFee = getAppointmentPrice(doctor, "video");
+
   return (
     <Card variant="interactive" radius="xl" className="h-full flex flex-col justify-between border border-[#E2E8F0] hover:border-blue-200">
       <CardHeader>
@@ -62,9 +67,11 @@ export const DoctorCard: React.FC<DoctorCardProps> = ({ doctor }) => {
             <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
             <span className="truncate">{doctor.hospital}</span>
           </div>
-          <div className="flex items-center justify-between pt-1">
-            <span className="text-slate-500">Consultation Fee</span>
-            <span className="font-extrabold text-sm text-[#0F172A]">${doctor.consultationFee}</span>
+          <div className="flex items-center justify-between pt-1 border-t border-slate-100 mt-2">
+            <span className="text-slate-500">In-Person / Video</span>
+            <span className="font-extrabold text-sm text-[#0F172A]">
+              {formatCurrency(inPersonFee)} / <span className="text-emerald-600 font-bold">{formatCurrency(videoFee)}</span>
+            </span>
           </div>
         </div>
 

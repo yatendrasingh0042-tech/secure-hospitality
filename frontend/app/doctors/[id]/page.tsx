@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { DOCTORS_DATA } from "@/data/doctors";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export default function DoctorDetailPage() {
   const params = useParams();
@@ -121,7 +122,7 @@ export default function DoctorDetailPage() {
             <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-slate-100">
               <div className="text-left md:text-right">
                 <span className="text-xs text-[#64748B]">Consultation Fee</span>
-                <p className="text-2xl font-extrabold text-[#0F172A]">${doctor.consultationFee}</p>
+                <p className="text-2xl font-extrabold text-[#0F172A]">{formatCurrency(doctor.consultationFee)}</p>
               </div>
               <Button
                 variant="primary"
@@ -261,7 +262,7 @@ export default function DoctorDetailPage() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 flex items-center justify-between shadow-2xl">
         <div>
           <p className="text-xs text-[#64748B]">Consultation Fee</p>
-          <p className="text-lg font-bold text-[#0F172A]">${doctor.consultationFee}</p>
+          <p className="text-lg font-bold text-[#0F172A]">{formatCurrency(doctor.consultationFee)}</p>
         </div>
         <Button
           variant="primary"
@@ -326,7 +327,7 @@ export default function DoctorDetailPage() {
                 </div>
                 <div className="flex justify-between border-t border-slate-200 pt-2 text-sm">
                   <span className="font-bold text-[#0F172A]">Total Consultation Fee:</span>
-                  <span className="font-extrabold text-[#2563EB]">${doctor.consultationFee}</span>
+                  <span className="font-extrabold text-[#2563EB]">{formatCurrency(doctor.consultationFee)}</span>
                 </div>
               </div>
 

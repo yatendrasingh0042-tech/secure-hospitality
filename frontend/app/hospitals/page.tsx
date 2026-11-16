@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Search, Building2, RefreshCw } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Input } from "@/components/ui/Input";
@@ -9,11 +9,12 @@ import { HospitalCard } from "@/components/hospitals/HospitalCard";
 import { HospitalSkeleton } from "@/components/hospitals/HospitalSkeleton";
 import { FilterPanel } from "@/components/filters/FilterPanel";
 import { FilterSection } from "@/components/filters/FilterSection";
-import { FilterButton } from "@/components/filters/FilterButton";
 import { SortDropdown, SortOption } from "@/components/filters/SortDropdown";
 import { ActiveFilters, ActiveFilterTag } from "@/components/filters/ActiveFilters";
 import { HOSPITALS_DATA } from "@/data/hospitals";
 import { LOCATIONS_LIST } from "@/data/locations";
+import { Hospital } from "@/types/hospital";
+import { apiRequest } from "@/lib/apiClient";
 
 const SORT_OPTIONS: SortOption[] = [
   { label: "Recommended", value: "recommended" },
@@ -29,7 +30,50 @@ export default function HospitalsPage() {
   const [onlyEmergency, setOnlyEmergency] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<string>("recommended");
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
-  const isLoading = false;
+  const [apiHospitals, setApiHospitals] = useState<Hospital[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch live hospitals from backend API
+  useEffect(() => {
+    const fetchHospitals = async () => {
+      setIsLoading(true);
+      try {
+        const res = await apiRequest("/api/hospitals");
+        if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
+          const mapped: Hospital[] = res.data.map((bHosp: any) => ({
+            id: bHosp._id || bHosp.id,
+            name: bHosp.name,
+            type: "Multispeciality Hospital",
+            location: `${bHosp.address || ""}, ${bHosp.city || ""}`,
+            district: bHosp.city || "Central",
+            distanceKm: 2.5,
+            isOpen247: true,
+            emergencyAvailable: bHosp.emergencyAvailable ?? true,
+            rating: 4.8,
+            reviewsCount: 120,
+            icuBedsAvailable: 15,
+            phone: bHosp.phone || "+91 98765 43210",
+            email: bHosp.email || "info@hospital.com",
+            image: "https://images.unsplash.com/photo-1587351021759-3e566b6af7cc?auto=format&fit=crop&w=600&q=80",
+            departments: Array.isArray(bHosp.departments)
+              ? bHosp.departments.map((d: any) => (typeof d === "string" ? { name: d, count: 5 } : { name: d.name || "General", count: 5 }))
+              : [{ name: "Cardiology", count: 5 }, { name: "Neurology", count: 3 }],
+            services: bHosp.facilities || ["24/7 ER", "ICU", "Lab Services"],
+          }));
+          setApiHospitals(mapped);
+        } else {
+          setApiHospitals(HOSPITALS_DATA);
+        }
+      } catch (err) {
+        setApiHospitals(HOSPITALS_DATA);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHospitals();
+  }, []);
+
+  const activeHospitalsData = apiHospitals.length > 0 ? apiHospitals : HOSPITALS_DATA;
 
   // Active filters list
   const activeFilters = useMemo(() => {
@@ -60,9 +104,9 @@ export default function HospitalsPage() {
     if (key === "onlyEmergency") setOnlyEmergency(false);
   };
 
-  // Filter & Sort mock dataset
+  // Filter & Sort dataset
   const filteredHospitals = useMemo(() => {
-    return HOSPITALS_DATA.filter((hosp) => {
+    return activeHospitalsData.filter((hosp) => {
       const matchesSearch =
         searchQuery === "" ||
         hosp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -83,7 +127,7 @@ export default function HospitalsPage() {
       if (sortBy === "icu_beds") return b.icuBedsAvailable - a.icuBedsAvailable;
       return 0;
     });
-  }, [searchQuery, selectedDistrict, only247, onlyEmergency, sortBy]);
+  }, [searchQuery, selectedDistrict, only247, onlyEmergency, sortBy, activeHospitalsData]);
 
   return (
     <div className="py-10 lg:py-16 bg-[#F8FAFC] min-h-screen">
@@ -99,92 +143,94 @@ export default function HospitalsPage() {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-6 max-w-2xl">
-          <Input
-            placeholder="Search hospitals, locations, departments or services..."
-            leftIcon={<Search className="h-4 w-4 text-[#64748B]" />}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        <div className="mb-8 p-4 rounded-3xl bg-white border border-[#E2E8F0] shadow-sm flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input
+              placeholder="Search by hospital name, department, or city..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              leftIcon={<Search className="h-4 w-4" />}
+            />
+          </div>
+          <Button
+            variant="secondary"
+            onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
+            className="lg:hidden"
+          >
+            Filters ({activeFilters.length})
+          </Button>
         </div>
 
-        {/* Layout Grid: Filters Sidebar + Hospital Results */}
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          {/* Shared Responsive Filter Panel */}
-          <FilterPanel
-            isOpenMobile={isMobileFilterOpen}
-            onCloseMobile={() => setIsMobileFilterOpen(false)}
-            onReset={handleResetFilters}
-            activeCount={activeFilters.length}
-          >
-            {/* District / Location Filter */}
-            <FilterSection title="District / Region">
-              <div className="space-y-1.5 text-xs text-[#0F172A]">
-                <label className="flex items-center gap-2 cursor-pointer py-1 hover:text-[#2563EB]">
-                  <input
-                    type="radio"
-                    name="district"
-                    checked={selectedDistrict === "All"}
-                    onChange={() => setSelectedDistrict("All")}
-                    className="accent-[#2563EB]"
-                  />
-                  <span>All Districts</span>
-                </label>
-                {LOCATIONS_LIST.map((dist) => (
-                  <label key={dist} className="flex items-center gap-2 cursor-pointer py-1 hover:text-[#2563EB]">
+        {/* Active Filter Tags */}
+        {activeFilters.length > 0 && (
+          <div className="mb-6">
+            <ActiveFilters
+              filters={activeFilters}
+              onRemove={handleRemoveFilter}
+              onClearAll={handleResetFilters}
+            />
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Filter Sidebar */}
+          <div className="lg:col-span-3">
+            <FilterPanel
+              isOpenMobile={isMobileFilterOpen}
+              onCloseMobile={() => setIsMobileFilterOpen(false)}
+              onReset={handleResetFilters}
+              activeCount={activeFilters.length}
+            >
+              <FilterSection title="District Location">
+                <div className="space-y-1">
+                  {LOCATIONS_LIST.map((loc) => (
+                    <button
+                      key={loc}
+                      type="button"
+                      onClick={() => setSelectedDistrict(loc)}
+                      className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                        selectedDistrict === loc
+                          ? "bg-blue-50 text-[#2563EB]"
+                          : "text-[#64748B] hover:bg-slate-50"
+                      }`}
+                    >
+                      {loc}
+                    </button>
+                  ))}
+                </div>
+              </FilterSection>
+
+              <FilterSection title="Availability & Emergency">
+                <div className="space-y-2 text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer text-[#0F172A] font-medium">
                     <input
-                      type="radio"
-                      name="district"
-                      checked={selectedDistrict === dist}
-                      onChange={() => setSelectedDistrict(dist)}
-                      className="accent-[#2563EB]"
+                      type="checkbox"
+                      checked={only247}
+                      onChange={(e) => setOnly247(e.target.checked)}
+                      className="rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
                     />
-                    <span>{dist}</span>
+                    <span>24/7 Open Only</span>
                   </label>
-                ))}
-              </div>
-            </FilterSection>
+                  <label className="flex items-center gap-2 cursor-pointer text-[#0F172A] font-medium">
+                    <input
+                      type="checkbox"
+                      checked={onlyEmergency}
+                      onChange={(e) => setOnlyEmergency(e.target.checked)}
+                      className="rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
+                    />
+                    <span>Emergency ER Ready</span>
+                  </label>
+                </div>
+              </FilterSection>
+            </FilterPanel>
+          </div>
 
-            {/* Operating Status */}
-            <FilterSection title="Facility Status">
-              <div className="space-y-2 text-xs text-[#0F172A]">
-                <label className="flex items-center gap-2 cursor-pointer hover:text-[#2563EB]">
-                  <input
-                    type="checkbox"
-                    checked={only247}
-                    onChange={(e) => setOnly247(e.target.checked)}
-                    className="accent-[#2563EB] rounded"
-                  />
-                  <span>24/7 Open Hospitals Only</span>
-                </label>
-
-                <label className="flex items-center gap-2 cursor-pointer hover:text-[#2563EB]">
-                  <input
-                    type="checkbox"
-                    checked={onlyEmergency}
-                    onChange={(e) => setOnlyEmergency(e.target.checked)}
-                    className="accent-[#2563EB] rounded"
-                  />
-                  <span>Level-1 ER Ready Facilities</span>
-                </label>
-              </div>
-            </FilterSection>
-          </FilterPanel>
-
-          {/* Results Main Column */}
-          <main className="flex-1 w-full space-y-4">
-            {/* Bar: Results Count, Mobile Filter Button, Sort Dropdown */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs">
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-xs sm:text-sm font-semibold text-[#0F172A]">
-                  Showing <span className="text-[#2563EB]">{filteredHospitals.length}</span> healthcare centers
-                </p>
-                <FilterButton
-                  activeCount={activeFilters.length}
-                  onClick={() => setIsMobileFilterOpen(true)}
-                />
-              </div>
-
+          {/* Hospitals Grid */}
+          <div className="lg:col-span-9 space-y-6">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-[#64748B]">
+                Showing {filteredHospitals.length} facilities
+              </span>
               <SortDropdown
                 options={SORT_OPTIONS}
                 value={sortBy}
@@ -192,43 +238,36 @@ export default function HospitalsPage() {
               />
             </div>
 
-            {/* Active Filter Chips */}
-            <ActiveFilters
-              filters={activeFilters}
-              onRemove={handleRemoveFilter}
-              onClearAll={handleResetFilters}
-            />
-
-            {/* Hospital Grid or Skeleton or Empty State */}
             {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <HospitalSkeleton key={i} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <HospitalSkeleton />
+                <HospitalSkeleton />
+                <HospitalSkeleton />
+                <HospitalSkeleton />
+              </div>
+            ) : filteredHospitals.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {filteredHospitals.map((hospital) => (
+                  <HospitalCard key={hospital.id} hospital={hospital} />
                 ))}
               </div>
-            ) : filteredHospitals.length === 0 ? (
-              <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-4 my-6">
-                <div className="h-14 w-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mx-auto">
-                  <Building2 className="h-7 w-7" />
+            ) : (
+              <div className="py-16 text-center rounded-3xl bg-white border border-[#E2E8F0] space-y-4 p-8">
+                <div className="h-12 w-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                  <Building2 className="h-6 w-6" />
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold text-[#0F172A]">No hospitals found</h3>
-                  <p className="text-xs sm:text-sm text-[#64748B] max-w-sm mx-auto">
-                    Try changing your search terms or clearing applied location filters.
+                  <p className="text-xs text-[#64748B] max-w-sm mx-auto">
+                    No hospital facilities match your current search query or active filter criteria.
                   </p>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleResetFilters} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
+                <Button variant="secondary" size="sm" onClick={handleResetFilters} leftIcon={<RefreshCw className="h-3.5 w-3.5" />}>
                   Reset All Filters
                 </Button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredHospitals.map((hosp) => (
-                  <HospitalCard key={hosp.id} hospital={hosp} />
-                ))}
-              </div>
             )}
-          </main>
+          </div>
         </div>
       </PageContainer>
     </div>

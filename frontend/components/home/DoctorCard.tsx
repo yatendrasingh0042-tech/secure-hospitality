@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Doctor } from "@/data/doctors";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 interface DoctorCardProps {
   doctor: Doctor;
@@ -62,7 +63,7 @@ export const DoctorCard: React.FC<DoctorCardProps> = ({ doctor, onSelect }) => {
             <span className="truncate">{doctor.location}</span>
           </span>
           <span className="font-bold text-[#0F172A] shrink-0">
-            {doctor.consultFee || `$${doctor.consultationFee}`}
+            {formatCurrency(doctor.consultationFee)}
           </span>
         </div>
 

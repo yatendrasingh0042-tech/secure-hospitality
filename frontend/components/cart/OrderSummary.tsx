@@ -6,6 +6,7 @@ import { ArrowRight, ShieldCheck, Tag } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useCart } from "@/context/CartContext";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 interface OrderSummaryProps {
   showCheckoutButton?: boolean;
@@ -14,7 +15,7 @@ interface OrderSummaryProps {
 export const OrderSummary: React.FC<OrderSummaryProps> = ({
   showCheckoutButton = true,
 }) => {
-  const { subtotal, discountTotal, estimatedDeliveryFee, grandTotal, totalItemCount } = useCart();
+  const { subtotal, discountTotal, deliveryMethod, estimatedDeliveryFee, grandTotal, totalItemCount } = useCart();
 
   return (
     <Card radius="xl" className="p-6 bg-white border border-[#E2E8F0] space-y-5 sticky top-24 shadow-xs">
@@ -26,7 +27,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
       <div className="space-y-3 text-xs text-[#64748B]">
         <div className="flex justify-between items-center">
           <span>Items Subtotal</span>
-          <span className="font-semibold text-[#0F172A]">${subtotal.toFixed(2)}</span>
+          <span className="font-semibold text-[#0F172A]">{formatCurrency(subtotal)}</span>
         </div>
 
         {discountTotal > 0 && (
@@ -34,29 +35,29 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({
             <span className="flex items-center gap-1">
               <Tag className="h-3.5 w-3.5" /> Product Savings
             </span>
-            <span className="font-bold">-${discountTotal.toFixed(2)}</span>
+            <span className="font-bold">-{formatCurrency(discountTotal)}</span>
           </div>
         )}
 
         <div className="flex justify-between items-center">
-          <span>Estimated Delivery</span>
+          <span>{deliveryMethod === "express" ? "Express Delivery" : "Standard Delivery"}</span>
           {estimatedDeliveryFee === 0 ? (
             <span className="font-bold text-emerald-600 uppercase text-[10px]">Free</span>
           ) : (
-            <span className="font-semibold text-[#0F172A]">${estimatedDeliveryFee.toFixed(2)}</span>
+            <span className="font-semibold text-[#0F172A]">{formatCurrency(estimatedDeliveryFee)}</span>
           )}
         </div>
 
-        {subtotal > 0 && subtotal < 40 && (
+        {subtotal > 0 && subtotal < 500 && (
           <p className="text-[11px] text-[#2563EB] bg-blue-50/70 p-2.5 rounded-xl border border-blue-100">
-            Add ${(40 - subtotal).toFixed(2)} more for <strong>Free Express Delivery</strong>!
+            Add {formatCurrency(500 - subtotal)} more for <strong>Free Standard Delivery</strong>!
           </p>
         )}
       </div>
 
       <div className="pt-3 border-t border-slate-200 flex justify-between items-baseline">
         <span className="text-sm font-bold text-[#0F172A]">Total Amount</span>
-        <span className="text-xl font-extrabold text-[#2563EB]">${grandTotal.toFixed(2)}</span>
+        <span className="text-xl font-extrabold text-[#2563EB]">{formatCurrency(grandTotal)}</span>
       </div>
 
       {showCheckoutButton && (

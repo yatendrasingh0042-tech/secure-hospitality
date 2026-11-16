@@ -7,6 +7,8 @@ import { AppointmentType, PatientInfo } from "@/context/AppointmentContext";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Calendar, Clock, User, Video, MapPin, Building2, ShieldCheck } from "lucide-react";
+import { formatCurrency } from "@/lib/formatCurrency";
+import { getAppointmentPrice } from "@/lib/pricing/appointmentPricing";
 
 interface AppointmentSummaryProps {
   doctor: Doctor | null;
@@ -31,7 +33,7 @@ export const AppointmentSummary: React.FC<AppointmentSummaryProps> = ({
     follow_up: "Follow-Up Consultation",
   };
 
-  const fee = doctor ? doctor.consultationFee : 45;
+  const fee = doctor ? getAppointmentPrice(doctor, appointmentType) : 500;
 
   return (
     <Card radius="xl" className="p-6 bg-white border border-[#E2E8F0] space-y-5 sticky top-24 shadow-sm">
@@ -113,7 +115,7 @@ export const AppointmentSummary: React.FC<AppointmentSummaryProps> = ({
       <div className="pt-2 border-t border-slate-200 space-y-1">
         <div className="flex justify-between items-center text-xs text-[#64748B]">
           <span>Consultation Fee</span>
-          <span>${fee.toFixed(2)}</span>
+          <span>{formatCurrency(fee)}</span>
         </div>
         <div className="flex justify-between items-center text-xs text-[#64748B]">
           <span>Service & Tech Fee</span>
@@ -121,7 +123,7 @@ export const AppointmentSummary: React.FC<AppointmentSummaryProps> = ({
         </div>
         <div className="flex justify-between items-center pt-2 text-sm font-extrabold text-[#0F172A]">
           <span>Total Estimated Fee</span>
-          <span className="text-base text-[#2563EB]">${fee.toFixed(2)}</span>
+          <span className="text-base text-[#2563EB]">{formatCurrency(fee)}</span>
         </div>
       </div>
     </Card>

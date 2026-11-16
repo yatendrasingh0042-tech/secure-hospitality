@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useMemo, useCallback } from "react";
 
 export type ReminderType = "Medication" | "Appointment" | "Health" | "General";
 export type RepeatOption = "Once" | "Daily" | "Weekly" | "Custom";
@@ -67,40 +67,43 @@ const ReminderContext = createContext<ReminderContextType | undefined>(undefined
 export const ReminderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [reminders, setReminders] = useState<Reminder[]>(DEFAULT_REMINDERS);
 
-  const createReminder = (data: Omit<Reminder, "id">) => {
+  const createReminder = useCallback((data: Omit<Reminder, "id">) => {
     const newRem: Reminder = {
       ...data,
       id: `rem-${Date.now()}`,
     };
     setReminders((prev) => [newRem, ...prev]);
-  };
+  }, []);
 
-  const updateReminder = (id: string, data: Partial<Reminder>) => {
+  const updateReminder = useCallback((id: string, data: Partial<Reminder>) => {
     setReminders((prev) =>
       prev.map((r) => (r.id === id ? { ...r, ...data } : r))
     );
-  };
+  }, []);
 
-  const deleteReminder = (id: string) => {
+  const deleteReminder = useCallback((id: string) => {
     setReminders((prev) => prev.filter((r) => r.id !== id));
-  };
+  }, []);
 
-  const toggleReminder = (id: string) => {
+  const toggleReminder = useCallback((id: string) => {
     setReminders((prev) =>
       prev.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r))
     );
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      reminders,
+      createReminder,
+      updateReminder,
+      deleteReminder,
+      toggleReminder,
+    }),
+    [reminders, createReminder, updateReminder, deleteReminder, toggleReminder]
+  );
 
   return (
-    <ReminderContext.Provider
-      value={{
-        reminders,
-        createReminder,
-        updateReminder,
-        deleteReminder,
-        toggleReminder,
-      }}
-    >
+    <ReminderContext.Provider value={value}>
       {children}
     </ReminderContext.Provider>
   );

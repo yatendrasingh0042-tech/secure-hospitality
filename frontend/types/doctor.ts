@@ -18,6 +18,11 @@ export interface Doctor {
   rating: number;
   reviewsCount: number;
   consultationFee: number;
+  consultationFees?: {
+    inPerson: number;
+    videoCall: number;
+    followUp: number;
+  };
   consultFee?: string | number;
   location: string;
   hospital: string;

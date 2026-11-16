@@ -2,7 +2,7 @@
 
 import React, { Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSafeRouter } from "@/hooks/useSafeRouter";
 import { ArrowLeft, Siren, MapPin, Phone, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmergencyProviderContext, useEmergency } from "@/context/EmergencyContext";
 
 function ConfirmContent() {
-  const router = useRouter();
+  const router = useSafeRouter();
   const { assistanceType, location, emergencyContact, confirmRequest } = useEmergency();
 
   const handleFinalConfirm = () => {

@@ -6,6 +6,7 @@ import { Package, Truck } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export const RecentOrders: React.FC = () => {
   return (
@@ -36,7 +37,7 @@ export const RecentOrders: React.FC = () => {
         </div>
 
         <div className="text-left sm:text-right shrink-0">
-          <span className="text-sm font-extrabold text-[#0F172A]">₹749</span>
+          <span className="text-sm font-extrabold text-[#0F172A]">{formatCurrency(749)}</span>
           <Button variant="outline" size="sm" className="mt-2 block" asChild>
             <Link href="/cart">Order Details</Link>
           </Button>

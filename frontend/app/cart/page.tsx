@@ -11,6 +11,7 @@ import { OrderSummary } from "@/components/cart/OrderSummary";
 import { MedicineCard } from "@/components/medicines/MedicineCard";
 import { useCart } from "@/context/CartContext";
 import { MEDICINES_DATA } from "@/data/medicines";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, clearCart, totalItemCount } = useCart();
@@ -85,7 +86,7 @@ export default function CartPage() {
                       {medicine.name}
                     </Link>
                     <p className="text-xs text-[#64748B]">
-                      {medicine.packSize} · ${medicine.price.toFixed(2)} each
+                      {medicine.packSize} · {formatCurrency(medicine.price)} each
                     </p>
                     {medicine.requiresPrescription && (
                       <Badge variant="warning" size="sm">
@@ -120,7 +121,7 @@ export default function CartPage() {
                   {/* Line Total */}
                   <div className="text-right">
                     <p className="font-extrabold text-base text-[#0F172A]">
-                      ${(medicine.price * quantity).toFixed(2)}
+                      {formatCurrency(medicine.price * quantity)}
                     </p>
                   </div>
 

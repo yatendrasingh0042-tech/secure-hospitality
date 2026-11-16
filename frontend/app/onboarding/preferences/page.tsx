@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useSafeRouter } from "@/hooks/useSafeRouter";
 import { ArrowLeft, CheckCircle2, ShieldCheck } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { UserPreferences } from "@/types/user";
 
 export default function OnboardingPreferencesStepPage() {
-  const router = useRouter();
+  const router = useSafeRouter();
   const { user, updateUser, completeOnboarding } = useAuth();
 
   const [consultationType, setConsultationType] = useState<"in_person" | "video" | "both">(

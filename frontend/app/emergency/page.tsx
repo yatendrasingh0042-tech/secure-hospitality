@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useSafeRouter } from "@/hooks/useSafeRouter";
 import { WifiOff } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Badge } from "@/components/ui/Badge";
@@ -15,7 +15,7 @@ import { EmergencyProviderContext, useEmergency } from "@/context/EmergencyConte
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
 
 function EmergencyLandingContent() {
-  const router = useRouter();
+  const router = useSafeRouter();
   const { assistanceType, setAssistanceType, location, setLocation } = useEmergency();
   const { isOnline } = useOnlineStatus();
 

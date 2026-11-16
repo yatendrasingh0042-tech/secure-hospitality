@@ -1,7 +1,9 @@
 export interface EmergencyContactItem {
   id: string;
+  _id?: string;
   name: string;
   relation: string;
+  relationship?: string;
   phone: string;
 }
 
@@ -22,9 +24,13 @@ export interface User {
   avatar?: string;
   dateOfBirth?: string;
   gender?: "Male" | "Female" | "Other" | "Prefer not to say";
+  address?: string;
   city?: string;
   state?: string;
+  country?: string;
   emergencyContacts: EmergencyContactItem[];
+  role?: string;
   preferences: UserPreferences;
   onboardingCompleted: boolean;
 }
+

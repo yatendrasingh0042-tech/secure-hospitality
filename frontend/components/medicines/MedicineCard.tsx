@@ -25,6 +25,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { useCart } from "@/context/CartContext";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Pill: Pill,
@@ -114,11 +115,11 @@ export const MedicineCard: React.FC<MedicineCardProps> = ({
         {/* Price display */}
         <div className="flex items-baseline gap-2">
           <span className="text-lg font-extrabold text-[#0F172A]">
-            ${medicine.price.toFixed(2)}
+            {formatCurrency(medicine.price)}
           </span>
           {medicine.originalPrice && (
             <span className="text-xs text-slate-400 line-through">
-              ${medicine.originalPrice.toFixed(2)}
+              {formatCurrency(medicine.originalPrice)}
             </span>
           )}
         </div>

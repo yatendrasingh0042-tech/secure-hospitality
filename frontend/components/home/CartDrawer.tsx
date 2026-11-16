@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ShoppingBag, Trash2, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Medicine } from "@/data/medicines";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export interface CartItem {
   medicine: Medicine;
@@ -99,7 +100,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                         <p className="font-bold text-[#0F172A]">{item.medicine.name}</p>
                         <p className="text-[11px] text-[#64748B]">{item.medicine.dosage}</p>
                         <p className="font-semibold text-[#10B981] mt-1">
-                          ${item.medicine.price.toFixed(2)} × {item.quantity}
+                          {formatCurrency(item.medicine.price)} × {item.quantity}
                         </p>
                       </div>
                       <button
@@ -120,7 +121,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <div className="pt-4 border-t border-slate-100 space-y-4">
                 <div className="flex justify-between items-center text-sm font-bold text-[#0F172A]">
                   <span>Total Estimated Cost</span>
-                  <span className="text-lg text-[#10B981]">${subtotal.toFixed(2)}</span>
+                  <span className="text-lg text-[#10B981]">{formatCurrency(subtotal)}</span>
                 </div>
 
                 {checkoutSimulated ? (

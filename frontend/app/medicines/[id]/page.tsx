@@ -23,6 +23,7 @@ import { PrescriptionModal } from "@/components/medicines/PrescriptionModal";
 import { MEDICINES_DATA } from "@/data/medicines";
 import { useCart } from "@/context/CartContext";
 import { Medicine } from "@/types/medicine";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export default function MedicineDetailPage() {
   const params = useParams();
@@ -122,11 +123,11 @@ export default function MedicineDetailPage() {
               {/* Price & Discounts */}
               <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-baseline gap-3">
                 <span className="text-3xl font-extrabold text-[#0F172A]">
-                  ${medicine.price.toFixed(2)}
+                  {formatCurrency(medicine.price)}
                 </span>
                 {medicine.originalPrice && (
                   <span className="text-sm text-slate-400 line-through">
-                    ${medicine.originalPrice.toFixed(2)}
+                    {formatCurrency(medicine.originalPrice)}
                   </span>
                 )}
                 {medicine.discount && (

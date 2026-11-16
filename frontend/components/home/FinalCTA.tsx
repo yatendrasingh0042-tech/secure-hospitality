@@ -1,14 +1,15 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { ArrowRight, ShieldCheck, PhoneCall } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PageContainer } from "@/components/layout/PageContainer";
 
 interface FinalCTAProps {
-  onOpenEmergencyModal: () => void;
-  onScrollToDoctors: () => void;
+  onOpenEmergencyModal?: () => void;
+  onScrollToDoctors?: () => void;
 }
 
 export const FinalCTA: React.FC<FinalCTAProps> = ({
@@ -45,22 +46,45 @@ export const FinalCTA: React.FC<FinalCTAProps> = ({
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
-            <Button
-              variant="primary"
-              size="lg"
-              onClick={onScrollToDoctors}
-              rightIcon={<ArrowRight className="h-4 w-4" />}
-            >
-              Get Started
-            </Button>
-            <Button
-              variant="danger"
-              size="lg"
-              onClick={onOpenEmergencyModal}
-              leftIcon={<PhoneCall className="h-4 w-4" />}
-            >
-              Emergency Support
-            </Button>
+            {onScrollToDoctors ? (
+              <Button
+                variant="primary"
+                size="lg"
+                onClick={onScrollToDoctors}
+                rightIcon={<ArrowRight className="h-4 w-4" />}
+              >
+                Get Started
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                size="lg"
+                asChild
+                rightIcon={<ArrowRight className="h-4 w-4" />}
+              >
+                <Link href="/doctors">Get Started</Link>
+              </Button>
+            )}
+
+            {onOpenEmergencyModal ? (
+              <Button
+                variant="danger"
+                size="lg"
+                onClick={onOpenEmergencyModal}
+                leftIcon={<PhoneCall className="h-4 w-4" />}
+              >
+                Emergency Support
+              </Button>
+            ) : (
+              <Button
+                variant="danger"
+                size="lg"
+                asChild
+                leftIcon={<PhoneCall className="h-4 w-4" />}
+              >
+                <Link href="/emergency">Emergency Support</Link>
+              </Button>
+            )}
           </div>
 
           <p className="text-xs text-[#64748B] pt-2">

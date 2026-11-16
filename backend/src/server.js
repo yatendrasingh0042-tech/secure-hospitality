@@ -61,7 +61,8 @@ app.use(
         !origin ||
         allowedOrigins.includes(origin) ||
         allowedOrigins.includes("*") ||
-        (isDev && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin))
+        (isDev && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) ||
+        /\.vercel\.app$/.test(origin)
       ) {
         callback(null, true);
       } else {
@@ -77,11 +78,21 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 
 // 4. Health check endpoints (exposed before rate limiters/auth)
-const getHealthHandler = (req, res) => {
+const getHealthHandler = async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    try {
+      await connectDB();
+    } catch {
+      // Degraded status captured below
+    }
+  }
+
   const dbConnected = mongoose.connection.readyState === 1;
-  res.status(dbConnected ? 200 : 503).json({
-    success: dbConnected,
-    status: dbConnected ? "healthy" : "degraded",
+  const isHealthy = dbConnected;
+
+  res.status(isHealthy ? 200 : 503).json({
+    success: isHealthy,
+    status: isHealthy ? "healthy" : "degraded",
     database: dbConnected ? "connected" : "disconnected",
     environment: process.env.NODE_ENV || "development",
     uptimeSeconds: Math.floor(process.uptime()),
@@ -102,7 +113,20 @@ app.use(auditLogger);
 app.use("/api/ambulances/request", emergencyLimiter);
 app.use("/api", generalLimiter);
 
-// 8. Database Connectivity Guard (Immediately returns 503 if DB disconnected to prevent Mongoose buffering hang)
+// 8. Serverless DB Auto-connect & Connectivity Guard
+app.use(async (req, res, next) => {
+  if (req.path === "/health" || req.path === "/api/health") {
+    return next();
+  }
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      await connectDB();
+    }
+  } catch (err) {
+    // If DB fails to connect, checkDbConnection below will catch and return 503
+  }
+  next();
+});
 app.use("/api", checkDbConnection);
 
 // 9. API Routes Mounting
@@ -123,22 +147,31 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/emergency-contacts", emergencyContactRoutes);
 
-// 9. Centralized Global Error Handler (Must be attached last)
+// 10. Centralized Global Error Handler (Must be attached last)
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5050;
 let server;
 
 const startServer = async () => {
-  await connectDB();
+  try {
+    await connectDB();
+  } catch (err) {
+    console.warn("Initial DB connection attempt during boot:", err.message);
+  }
   server = app.listen(PORT, () => {
     console.log(`🚀 Secure Hospitality API running on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
   });
+  return server;
 };
 
-startServer();
+// Start standalone HTTP server only when run directly in local/Node environment
+// In Vercel serverless environment (process.env.VERCEL === "1"), Vercel invokes the exported app directly.
+if (process.env.VERCEL !== "1" && require.main === module) {
+  startServer();
+}
 
-// 10. Graceful Shutdown Signals Handling
+// 11. Graceful Shutdown Signals Handling
 const gracefulShutdown = (signal) => {
   console.log(`\n🛑 Received ${signal}. Initiating graceful shutdown...`);
   if (server) {
@@ -166,4 +199,10 @@ const gracefulShutdown = (signal) => {
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 
-module.exports = { app, server };
+// Export Express app directly as a function for Vercel Serverless Function compatibility,
+// while preserving named exports for existing tests and scripts.
+module.exports = app;
+module.exports.app = app;
+module.exports.default = app;
+module.exports.server = server;
+module.exports.startServer = startServer;

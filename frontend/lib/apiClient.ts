@@ -3,7 +3,8 @@
  * Manages base URL, JWT authorization headers, status handling (401, 403, 404, 422, 500), and response parsing.
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
+const rawApiUrl = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = rawApiUrl ? rawApiUrl.replace(/\/+$/, "") : "http://localhost:5050";
 
 export class ApiError extends Error {
   status: number;

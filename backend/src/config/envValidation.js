@@ -4,7 +4,8 @@
  */
 
 const validateEnv = () => {
-  const requiredEnvVars = ["JWT_SECRET", "PORT"];
+  const isProduction = process.env.NODE_ENV === "production";
+  const requiredEnvVars = ["JWT_SECRET"];
   const missingVars = [];
 
   requiredEnvVars.forEach((key) => {
@@ -13,10 +14,15 @@ const validateEnv = () => {
     }
   });
 
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL;
+  if (!mongoUri && isProduction) {
+    missingVars.push("MONGODB_URI");
+  }
+
   if (missingVars.length > 0) {
-    console.error(`❌ CRITICAL SECURITY ERROR: Missing required environment variables: ${missingVars.join(", ")}`);
-    if (process.env.NODE_ENV === "production") {
-      process.exit(1);
+    console.warn(`⚠️ CONFIGURATION WARNING: Missing environment variable(s): ${missingVars.join(", ")}`);
+    if (isProduction) {
+      console.warn("⚠️ Production serverless execution continuing with degraded fallbacks where appropriate. Configure missing variables in Vercel Dashboard.");
     } else {
       console.warn("⚠️ Running with fallback defaults in development mode.");
     }
